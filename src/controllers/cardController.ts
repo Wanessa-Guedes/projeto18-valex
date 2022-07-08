@@ -159,7 +159,6 @@ export async function getCards(req: Request, res: Response) {
 
     //Somente cartões cadastrados devem poder ser visualizados
     const isCardRegistered = await cardRepository.findByEmployeeId(employeeId);
-    console.log(isCardRegistered)
     if(isCardRegistered.length == 0){
         throw{
             type: "NOT REGISTERED"
@@ -168,20 +167,18 @@ export async function getCards(req: Request, res: Response) {
 
     //Somente cartões ativos podem ser visualizados
     let cardsActived = [];
-    const activeCards = await Promise.all(isCardRegistered?.filter((cardRegistered) => {
+    isCardRegistered?.filter((cardRegistered) => {
         if(!cardRegistered.isBlocked && cardRegistered.password !== null){
-                let isPassword = passwords.some(password => {
-                    bcrypt.compare(password, cardRegistered.password)
+                let isPassword = passwords.map(password => {
+                    bcrypt.compareSync(password, cardRegistered.password)
             })
-            console.log(isPassword)
             if(isPassword){
-                console.log(cardRegistered)
                 cardsActived.push(cardRegistered)
             }
         }
-    }))
-    console.log('sou eu', cardsActived)
-    if(activeCards.length == 0){
+    })
+
+    if(cardsActived.length == 0){
         throw{
             type: "NO CARDS ACTIVE OR PASSWORD DONT MATCH"
         }
@@ -220,5 +217,49 @@ export async function cardTransactions(req: Request, res: Response) {
 
     res.send({"balance": balanceCard, "transactions": recharges, "recharges": recharges}).status(200);
     
+}
+
+export async function cardBlock(req: Request, res: Response) {
+    //Nessa rota, empregados podem bloquear cartões. 
+    //Para um cartão ser bloqueado precisamos do identificador(CVC ou id?) e da senha do mesmo.
+
+    // Somente cartões cadastrados devem ser bloqueados
+    const cardId: number = +req.body.cardId;
+    const password: string = req.body.password;
+
+    const cardInfo = await cardRepository.findById(cardId);
+    if(cardInfo == undefined){
+        throw {
+            type: "CARD DOESN'T EXIST"
+        }
+    }
+
+    //A senha do cartão deverá ser recebida e verificada para garantir a segurança da requisição
+    const isPasswordCorrect = bcrypt.compare(password, cardInfo.password);
+    if(!isPasswordCorrect){
+        throw{
+            type: "INCORRECT PASSWORD"
+        }
+    }
+    
+    //Somente cartões não expirados devem ser bloqueados
+    const formatExpiredData = dayjs(`01/${cardInfo.expirationDate}`).format();
+    const cardIsExpired = dayjs().isAfter(formatExpiredData)
+    if(cardIsExpired){
+        throw{
+            type: "CARD IS ALREADY EXPIRED"
+        }
+    }
+
+    //Somente cartões não bloqueados devem ser bloqueados
+    if(cardInfo.isBlocked){
+        throw{
+            type: "CARD IS ALREADY BLOCKED"
+        }
+    }
+
+    await cardRepository.update(cardId, {isBlocked: true});
+
+    res.sendStatus(200);
 }
 

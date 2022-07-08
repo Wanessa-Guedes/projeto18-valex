@@ -2,7 +2,7 @@ import {Router} from "express";
 
 import { schemaValidator } from "./../middlewares/schemaValidator.js";
 import { typeCardSchema } from "../schemas/typeCardSchema.js";
-import { cardTransactions, createCard, getCards } from "../controllers/cardController.js";
+import { cardBlock, cardTransactions, createCard, getCards } from "../controllers/cardController.js";
 import { activateCard } from "../controllers/cardController.js";
 import { activationCardSchema } from "../schemas/cardActivationSchema.js";
 
@@ -12,5 +12,6 @@ cardRouter.post("/card", schemaValidator(typeCardSchema), createCard)
 cardRouter.post("/activatecard", schemaValidator(activationCardSchema), activateCard)
 cardRouter.get("/card", getCards)
 cardRouter.get("/cardbalance/:cardId", cardTransactions)
+cardRouter.put("/card/block", cardBlock)
 
 export default cardRouter;
