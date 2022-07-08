@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { faker } from '@faker-js/faker';
 import dayjs from "dayjs";
 import Cryptr from "cryptr";
+import bcrypt from "bcrypt";
 
 import * as companyRepository from "../repositories/companyRepository.js";
 import * as employeeRepository from "../repositories/employeeRepository.js";
@@ -41,7 +42,7 @@ export async function createCard(req: Request, res: Response) {
         const hasThisCard = await cardRepository.findByTypeAndEmployeeId(cardType, employeeId);
         if(hasThisCard !== undefined){
             throw {
-                type: "CARD ALREADY REGISTERED"
+                type: "CARD TYPE ALREADY REGISTERED"
             }
         }
         
@@ -92,5 +93,57 @@ export async function createCard(req: Request, res: Response) {
 
         await cardRepository.insert(cardData)
 
-        res.sendStatus(201);
+        res.status(201).send([cardData.number, cardCVV]);
+}
+
+export async function activateCard(req: Request, res: Response) {
+    
+    const cardId: number = req.body.cardId;
+    
+    // Somente cartões cadastrados devem ser ativados (pensar num res.locals aqui quando for separar)
+    const cardInfo = await cardRepository.findById(cardId);
+
+    if(!cardInfo){
+        throw {
+            type: "CARD DOESN'T EXIST"
+        }
+    }
+
+    // Somente cartões não expirados devem ser ativados
+    const formatExpiredData = dayjs(`01/${cardInfo.expirationDate}`).format();
+    const cardIsExpired = dayjs().isAfter(formatExpiredData)
+    if(cardIsExpired){
+        throw{
+            type: "CARD IS ALREADY EXPIRED"
+        }
+    }
+
+    //Cartões já ativados (com senha cadastrada) não devem poder ser ativados de novo
+    if(cardInfo.password !== null){
+        throw {
+            type: "CARD ALREADY REGISTERED"
+        }
+    }
+
+    // O CVC deverá ser recebido e verificado para garantir a segurança da requisição
+    const securityCode: string = req.body.securityCode;
+
+    const cryptr = new Cryptr('myTotallySecretKey');
+    const decryptedString = cryptr.decrypt(cardInfo.securityCode);
+
+    if(securityCode !== decryptedString){
+        throw {
+            type: "CVV INCORRECT"
+        }
+    }
+
+    // A senha do cartão deverá ser persistida de forma criptografada por ser um dado sensível
+    const password: string = req.body.password;
+    const hash = 10;
+    const passwordHasehd = bcrypt.hashSync(password, hash);
+
+    await cardRepository.update(cardInfo.id, {password: passwordHasehd});
+
+    res.sendStatus(201);
+
 }

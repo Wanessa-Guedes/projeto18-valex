@@ -20,11 +20,13 @@
   },
   "dependencies": {
     "@types/axios": "^0.14.0",
+    "@types/bcrypt": "^5.0.0",
     "@types/cryptr": "^4.0.1",
     "@types/dotenv": "^8.2.0",
     "@types/joi": "^17.2.3",
     "@types/pg": "^8.6.5",
     "axios": "^0.27.2",
+    "bcrypt": "^5.0.1",
     "body-parser": "^1.20.0",
     "cryptr": "^6.0.3",
     "dayjs": "^1.11.3",
