@@ -194,7 +194,6 @@ export async function cardTransactions(req: Request, res: Response) {
     // Somente cartões cadastrados devem poder ser visualizados
     const cardId: number = +req.params.cardId;
     const cardInfo = await cardRepository.findById(cardId);
-    console.log(cardInfo)
     if(cardInfo == undefined){
         throw {
             type: "CARD DOESN'T EXIST"
@@ -215,7 +214,7 @@ export async function cardTransactions(req: Request, res: Response) {
 
     let balanceCard = rechargeAmount - paymentAmount;
 
-    res.send({"balance": balanceCard, "transactions": recharges, "recharges": recharges}).status(200);
+    res.send({"balance": balanceCard, "transactions": payments, "recharges": recharges}).status(200);
     
 }
 
