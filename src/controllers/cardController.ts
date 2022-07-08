@@ -7,6 +7,8 @@ import bcrypt from "bcrypt";
 import * as companyRepository from "../repositories/companyRepository.js";
 import * as employeeRepository from "../repositories/employeeRepository.js";
 import * as cardRepository from "../repositories/cardRepository.js"
+import * as rechargeRepository from "../repositories/rechargeRepository.js"
+import * as paymentRepository from "../repositories/paymentRepository.js"
 
 export async function createCard(req: Request, res: Response) {
         //
@@ -147,3 +149,76 @@ export async function activateCard(req: Request, res: Response) {
     res.sendStatus(201);
 
 }
+
+//TODO: ROTA DANDO ERRO - VOLTAR AQUI (Visualização de cartões)
+export async function getCards(req: Request, res: Response) {
+    // Nessa rota, empregados podem visualizar os dados de seus cartões. 
+    //Para um cartão ser visualizado precisamos do identificador do empregado e da senha dos cartões.
+    const employeeId: number = req.body.employeeId;
+    const passwords: string[] = req.body.passwords;
+
+    //Somente cartões cadastrados devem poder ser visualizados
+    const isCardRegistered = await cardRepository.findByEmployeeId(employeeId);
+    console.log(isCardRegistered)
+    if(isCardRegistered.length == 0){
+        throw{
+            type: "NOT REGISTERED"
+        }
+    }
+
+    //Somente cartões ativos podem ser visualizados
+    let cardsActived = [];
+    const activeCards = await Promise.all(isCardRegistered?.filter((cardRegistered) => {
+        if(!cardRegistered.isBlocked && cardRegistered.password !== null){
+                let isPassword = passwords.some(password => {
+                    bcrypt.compare(password, cardRegistered.password)
+            })
+            console.log(isPassword)
+            if(isPassword){
+                console.log(cardRegistered)
+                cardsActived.push(cardRegistered)
+            }
+        }
+    }))
+    console.log('sou eu', cardsActived)
+    if(activeCards.length == 0){
+        throw{
+            type: "NO CARDS ACTIVE OR PASSWORD DONT MATCH"
+        }
+    }
+
+    res.sendStatus(200)
+}
+
+export async function cardTransactions(req: Request, res: Response) {
+    // Nessa rota, empregados podem visualizar o saldo de um cartão e as transações do mesmo. 
+    // Para isso, precisamos do identificador do cartão.(CVV?)
+
+    // Somente cartões cadastrados devem poder ser visualizados
+    const cardId: number = +req.params.cardId;
+    const cardInfo = await cardRepository.findById(cardId);
+    console.log(cardInfo)
+    if(cardInfo == undefined){
+        throw {
+            type: "CARD DOESN'T EXIST"
+        }
+    }
+    // O saldo de um cartão equivale a soma de suas recargas menos a soma de suas compras
+    const recharges = await rechargeRepository.findByCardId(cardId);
+    let rechargeAmount: number = 0;
+        recharges?.map(recharge => {
+            rechargeAmount += recharge.amount
+        })
+
+    const payments = await paymentRepository.findByCardId(cardId);
+    let paymentAmount: number = 0;
+        payments?.map(payment => {
+            paymentAmount += payment.amount
+        })
+
+    let balanceCard = rechargeAmount - paymentAmount;
+
+    res.send({"balance": balanceCard, "transactions": recharges, "recharges": recharges}).status(200);
+    
+}
+
