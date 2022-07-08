@@ -3,13 +3,13 @@ import "express-async-errors";
 import dotenv from "dotenv";
 dotenv.config();
 import router from "./src/routes/index.js";
-
+import handleError from "./src/middlewares/errorHandlingMiddleware.js"; 
 
 const app = express();
 app.use(express.json());
 
 app.use(router) 
-
+app.use(handleError)
 
 const PORT = +process.env.PORT || 5000;
 

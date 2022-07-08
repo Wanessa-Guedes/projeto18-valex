@@ -8,7 +8,6 @@ import * as employeeRepository from "../repositories/employeeRepository.js";
 import * as cardRepository from "../repositories/cardRepository.js"
 
 export async function createCard(req: Request, res: Response) {
-    try {
         //
         const {employeeId, cardType} = req.body;
 
@@ -23,6 +22,7 @@ export async function createCard(req: Request, res: Response) {
 
         // A chave de API deve ser possuida por alguma empresa
         const isValidKey = await companyRepository.findByApiKey(apiKey)
+        
         if(!isValidKey){
             throw{
                 type: "NOT REGISTERED"
@@ -39,18 +39,17 @@ export async function createCard(req: Request, res: Response) {
 
         // Empregados não podem possuir mais de um cartão do mesmo tipo
         const hasThisCard = await cardRepository.findByTypeAndEmployeeId(cardType, employeeId);
-        if(!hasThisCard){
+        if(hasThisCard !== undefined){
             throw {
                 type: "CARD ALREADY REGISTERED"
             }
         }
-        //TODO: O tipo do cartão só deve ser uma das seguintes opções:(??)
-
+        
         //Utilize a biblioteca faker para gerar o número do cartão
         const creditCarNumber = faker.finance.creditCardNumber('visa');
-
+        
         //O nome no cartão deve estar no formato primeiro nome + iniciais de nomes do meio + ultimo nome (tudo em caixa alta).
-        const employeeName = validEmployee.fullName.split(' ');
+        const employeeName: string[]= validEmployee.fullName.split(' ');
         let arrCardNameEmployee: string[] = [];
         let cardNameEmployee: string = '';
 
@@ -59,11 +58,15 @@ export async function createCard(req: Request, res: Response) {
                 if(index != 0 && index != employeeName.length - 1){
                     if(name.length > 2){
                         name = name.slice(0,1);
+                    } else {
+                        name = "";
                     }
                 }
                 arrCardNameEmployee.push(name)
             });
             cardNameEmployee = arrCardNameEmployee.join(' ').toUpperCase();
+        } else {
+            cardNameEmployee = employeeName.join(' ').toUpperCase();
         }
         
         // A data de expiração deverá ser o dia atual 5 anos a frente e no formato MM/YY
@@ -89,8 +92,5 @@ export async function createCard(req: Request, res: Response) {
 
         await cardRepository.insert(cardData)
 
-
-    } catch (error) {
-        return res.status(500).send({message: 'Erro ao acessar o banco de dados.'})
-    }
+        res.sendStatus(201);
 }
