@@ -8,7 +8,8 @@ export default async function handleError(error, req: Request, res: Response, ne
     if(error.type == "NOT REGISTERED" || error.type == "CARD ALREADY REGISTERED" 
         || error.type == "CARD IS ALREADY EXPIRED" || error.type == "CARD TYPE ALREADY REGISTERED"
         || error.type == "CVV INCORRECT" || error.type == "NO CARDS ACTIVE OR PASSWORD DONT MATCH" ||
-        error.type == "CARD IS ALREADY BLOCKED" || error.type == "INCORRECT PASSWORD"){
+        error.type == "CARD IS ALREADY BLOCKED" || error.type == "INCORRECT PASSWORD" ||
+        error.type == "CARD IS NOT BLOCKED"){
         return res.status(401).send(`${error.type}`);
     }
 

@@ -235,7 +235,7 @@ export async function cardBlock(req: Request, res: Response) {
     }
 
     //A senha do cartão deverá ser recebida e verificada para garantir a segurança da requisição
-    const isPasswordCorrect = bcrypt.compare(password, cardInfo.password);
+    const isPasswordCorrect = bcrypt.compareSync(password, cardInfo.password);
     if(!isPasswordCorrect){
         throw{
             type: "INCORRECT PASSWORD"
@@ -263,3 +263,46 @@ export async function cardBlock(req: Request, res: Response) {
     res.sendStatus(200);
 }
 
+export async function cardUnblock(req: Request, res: Response) {
+    //Nessa rota, empregados podem desbloquear cartões. 
+    //Para um cartão ser desbloqueado precisamos do identificador e da senha do mesmo.
+
+    //Somente cartões cadastrados devem ser desbloqueados
+    const cardId: number = +req.body.cardId;
+    const password: string = req.body.password;
+
+    const cardInfo = await cardRepository.findById(cardId);
+    if(cardInfo == undefined){
+        throw {
+            type: "CARD DOESN'T EXIST"
+        }
+    }
+
+    //A senha do cartão deverá ser recebida e verificada para garantir a segurança da requisição
+    const isPasswordCorrect = bcrypt.compareSync(password, cardInfo.password);
+    if(!isPasswordCorrect){
+        throw{
+            type: "INCORRECT PASSWORD"
+        }
+    }
+    //Somente cartões não expirados devem ser desbloqueados
+    const formatExpiredData = dayjs(`01/${cardInfo.expirationDate}`).format();
+    const cardIsExpired = dayjs().isAfter(formatExpiredData)
+    if(cardIsExpired){
+        throw{
+            type: "CARD IS ALREADY EXPIRED"
+        }
+    }
+
+    //Somente cartões bloqueados devem ser desbloqueados
+    if(!cardInfo.isBlocked){
+        throw{
+            type: "CARD IS NOT BLOCKED"
+        }
+    }
+
+    await cardRepository.update(cardId, {isBlocked: false});
+
+    res.sendStatus(200);
+
+}
