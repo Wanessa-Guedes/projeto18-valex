@@ -10,9 +10,12 @@ import * as cardRepository from "../repositories/cardRepository.js"
 import * as rechargeRepository from "../repositories/rechargeRepository.js"
 import * as paymentRepository from "../repositories/paymentRepository.js"
 
+import { cardServices } from "../services/cardServices.js";
+import { generateInfosCard } from "../utils/generateInfosCard.js";
+
 export async function createCard(req: Request, res: Response) {
         //
-        const {employeeId, cardType} = req.body;
+        const {employeeId, cardType}:{employeeId: number, cardType:any} = req.body;
 
         // A chave de API deverá ser recebida no header x-api-key
         const apiKey = req.headers['x-api-key'] as string;
@@ -23,79 +26,37 @@ export async function createCard(req: Request, res: Response) {
             }
         }
 
-        // A chave de API deve ser possuida por alguma empresa
-        const isValidKey = await companyRepository.findByApiKey(apiKey)
-        
-        if(!isValidKey){
-            throw{
-                type: "NOT REGISTERED"
-            }
+        res.locals.createCard = {
+            employeeId, 
+            cardType,
+            apiKey
         }
+        // A chave de API deve ser possuida por alguma empresa
+        await cardServices.validateAPIKey(apiKey)
 
         // Somente empregados cadastrados devem possuir cartões
-        const validEmployee = await employeeRepository.findById(employeeId);
-        if(!validEmployee){
-            throw{
-                type: "NOT REGISTERED"
-            }
-        }
+        const validEmployee = await cardServices.registeredEmployee(employeeId)
 
         // Empregados não podem possuir mais de um cartão do mesmo tipo
-        const hasThisCard = await cardRepository.findByTypeAndEmployeeId(cardType, employeeId);
-        if(hasThisCard !== undefined){
-            throw {
-                type: "CARD TYPE ALREADY REGISTERED"
-            }
-        }
+        await cardServices.confirmCardType(employeeId, cardType)
         
-        //Utilize a biblioteca faker para gerar o número do cartão
-        const creditCarNumber = faker.finance.creditCardNumber('visa');
-        
-        //O nome no cartão deve estar no formato primeiro nome + iniciais de nomes do meio + ultimo nome (tudo em caixa alta).
-        const employeeName: string[]= validEmployee.fullName.split(' ');
-        let arrCardNameEmployee: string[] = [];
-        let cardNameEmployee: string = '';
-
-        if(employeeName.length > 2){
-            employeeName.map((name, index) => {
-                if(index != 0 && index != employeeName.length - 1){
-                    if(name.length > 2){
-                        name = name.slice(0,1);
-                    } else {
-                        name = "";
-                    }
-                }
-                arrCardNameEmployee.push(name)
-            });
-            cardNameEmployee = arrCardNameEmployee.join(' ').toUpperCase();
-        } else {
-            cardNameEmployee = employeeName.join(' ').toUpperCase();
-        }
-        
-        // A data de expiração deverá ser o dia atual 5 anos a frente e no formato MM/YY
-        const expireDate = dayjs().add(5, 'year').format('MM/YY');
-
-        //O código de segurança (CVC) deverá ser persistido de forma criptografada por ser um dado sensível
-        const cardCVV = faker.finance.creditCardCVV();
-        const cryptr = new Cryptr('myTotallySecretKey');
-
-        const encryptedString = cryptr.encrypt(cardCVV);
-        //const decryptedString = cryptr.decrypt(encryptedString);
+        //GERANDO INFORMAÇÕES DO CARTÃO
+        const infosCard = generateInfosCard.generateCard(validEmployee);
 
         // criação do cartão
         const cardData = {
         employeeId: employeeId,
-        number: creditCarNumber,
-        cardholderName: cardNameEmployee,
-        securityCode: encryptedString,
-        expirationDate: expireDate,
+        number: infosCard.creditCarNumber,
+        cardholderName: infosCard.cardNameEmployee,
+        securityCode: infosCard.encryptedString,
+        expirationDate: infosCard.expireDate,
         isVirtual: false,
         isBlocked: false,
         type: cardType}
 
         await cardRepository.insert(cardData)
 
-        res.status(201).send([cardData.number, cardCVV]);
+        res.status(201).send([cardData.number, infosCard.cardCVV]);
 }
 
 export async function activateCard(req: Request, res: Response) {
