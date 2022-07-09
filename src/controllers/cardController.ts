@@ -12,10 +12,13 @@ import * as paymentRepository from "../repositories/paymentRepository.js"
 
 import { cardServices } from "../services/cardServices.js";
 import { generateInfosCard } from "../utils/generateInfosCard.js";
+import { verifyCardExpiration } from "../utils/verifyCardExpiration.js";
+import { verifyCardRegistration } from "../utils/verifyCardRegistration.js";
+import { verifyCVC } from "../utils/verifyCVC.js";
 
 export async function createCard(req: Request, res: Response) {
         //
-        const {employeeId, cardType}:{employeeId: number, cardType:any} = req.body;
+        const {employeeId, cardType}:{employeeId: number, cardType: cardRepository.TransactionTypes} = req.body;
 
         // A chave de API deverá ser recebida no header x-api-key
         const apiKey = req.headers['x-api-key'] as string;
@@ -25,12 +28,12 @@ export async function createCard(req: Request, res: Response) {
                 type: "NOT FOUND"
             }
         }
-
+/* 
         res.locals.createCard = {
             employeeId, 
             cardType,
             apiKey
-        }
+        } */
         // A chave de API deve ser possuida por alguma empresa
         await cardServices.validateAPIKey(apiKey)
 
@@ -61,47 +64,22 @@ export async function createCard(req: Request, res: Response) {
 
 export async function activateCard(req: Request, res: Response) {
     
-    const cardId: number = req.body.cardId;
-    
-    // Somente cartões cadastrados devem ser ativados (pensar num res.locals aqui quando for separar)
-    const cardInfo = await cardRepository.findById(cardId);
-
-    if(!cardInfo){
-        throw {
-            type: "CARD DOESN'T EXIST"
-        }
-    }
+    const cardId: number = +req.body.cardId;
+    const securityCode: string = req.body.securityCode;
+    const password: string = req.body.password;
+    // Somente cartões cadastrados devem ser ativados 
+    const cardInfo = await cardServices.findCardById(cardId);
 
     // Somente cartões não expirados devem ser ativados
-    const formatExpiredData = dayjs(`01/${cardInfo.expirationDate}`).format();
-    const cardIsExpired = dayjs().isAfter(formatExpiredData)
-    if(cardIsExpired){
-        throw{
-            type: "CARD IS ALREADY EXPIRED"
-        }
-    }
+    verifyCardExpiration.verifyExpiration(cardInfo)
 
     //Cartões já ativados (com senha cadastrada) não devem poder ser ativados de novo
-    if(cardInfo.password !== null){
-        throw {
-            type: "CARD ALREADY REGISTERED"
-        }
-    }
+    verifyCardRegistration.verifyRegister(cardInfo)
 
     // O CVC deverá ser recebido e verificado para garantir a segurança da requisição
-    const securityCode: string = req.body.securityCode;
-
-    const cryptr = new Cryptr('myTotallySecretKey');
-    const decryptedString = cryptr.decrypt(cardInfo.securityCode);
-
-    if(securityCode !== decryptedString){
-        throw {
-            type: "CVV INCORRECT"
-        }
-    }
+    verifyCVC.cardCVC(securityCode, cardInfo)
 
     // A senha do cartão deverá ser persistida de forma criptografada por ser um dado sensível
-    const password: string = req.body.password;
     const hash = 10;
     const passwordHasehd = bcrypt.hashSync(password, hash);
 
@@ -148,6 +126,7 @@ export async function getCards(req: Request, res: Response) {
     res.sendStatus(200)
 }
 
+//TODO: VOLTAR NESSA ROTA 
 export async function cardTransactions(req: Request, res: Response) {
     // Nessa rota, empregados podem visualizar o saldo de um cartão e as transações do mesmo. 
     // Para isso, precisamos do identificador do cartão.(CVV?)

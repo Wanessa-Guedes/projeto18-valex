@@ -23,7 +23,7 @@ async function registeredEmployee(employeeId: number) {
     return validEmployee;
 }
 
-async function confirmCardType(employeeId: number, cardType: any) {
+async function confirmCardType(employeeId: number, cardType: cardRepository.TransactionTypes) {
     const hasThisCard = await cardRepository.findByTypeAndEmployeeId(cardType, employeeId);
     if(hasThisCard !== undefined){
         throw {
@@ -32,8 +32,20 @@ async function confirmCardType(employeeId: number, cardType: any) {
     }
 }
 
+async function findCardById(cardId: number) {
+    const cardInfo = await cardRepository.findById(cardId);
+    if(!cardInfo){
+        throw {
+            type: "CARD DOESN'T EXIST"
+        }
+    }
+
+    return cardInfo
+}
+
 export const cardServices = {
     validateAPIKey,
     registeredEmployee,
-    confirmCardType
+    confirmCardType,
+    findCardById
 }
