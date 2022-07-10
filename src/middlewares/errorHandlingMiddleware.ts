@@ -1,7 +1,8 @@
 import { NextFunction, Request, Response } from "express";
 
 export default async function handleError(error, req: Request, res: Response, next: NextFunction) {
-    if(error.type == "NOT FOUND" || error.type == "CARD DOESN'T EXIST"){
+    if(error.type == "NOT FOUND" || error.type == "CARD DOESN'T EXIST" || 
+        error.type == "EMPLOYEE NOT REGISTERED IN THIS COMPANY OR CARD DOESN'T BELONG TO EMPLOYEE"){
         return res.status(404).send(`${error.type}`);
     }
 

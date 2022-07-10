@@ -8,6 +8,15 @@ function verifyRegister(cardInfo: cardRepository.Card){
     }
 }
 
+function verifyCardActivation(cardInfo: cardRepository.Card){
+    if(cardInfo.password == null){
+        throw {
+            type: "CARD IS NOT ACTIVATED"
+        }
+    }
+}
+
 export const verifyCardRegistration = {
-    verifyRegister
+    verifyRegister,
+    verifyCardActivation
 }

@@ -1,16 +1,10 @@
 import { Request, Response } from "express";
-import { faker } from '@faker-js/faker';
-import dayjs from "dayjs";
-import Cryptr from "cryptr";
 import bcrypt from "bcrypt";
 
-import * as companyRepository from "../repositories/companyRepository.js";
-import * as employeeRepository from "../repositories/employeeRepository.js";
-import * as cardRepository from "../repositories/cardRepository.js"
-import * as rechargeRepository from "../repositories/rechargeRepository.js"
-import * as paymentRepository from "../repositories/paymentRepository.js"
-
+import * as cardRepository from "../repositories/cardRepository.js";
 import { cardServices } from "../services/cardServices.js";
+
+import { verifyApiKey } from "../utils/verifyApiKey.js";
 import { generateInfosCard } from "../utils/generateInfosCard.js";
 import { verifyCardExpiration } from "../utils/verifyCardExpiration.js";
 import { verifyCardRegistration } from "../utils/verifyCardRegistration.js";
@@ -24,18 +18,8 @@ export async function createCard(req: Request, res: Response) {
 
         // A chave de API deverá ser recebida no header x-api-key
         const apiKey = req.headers['x-api-key'] as string;
+        verifyApiKey.verifyKey(apiKey)
 
-        if(!apiKey){
-            throw{
-                type: "NOT FOUND"
-            }
-        }
-/* 
-        res.locals.createCard = {
-            employeeId, 
-            cardType,
-            apiKey
-        } */
         // A chave de API deve ser possuida por alguma empresa
         await cardServices.validateAPIKey(apiKey)
 

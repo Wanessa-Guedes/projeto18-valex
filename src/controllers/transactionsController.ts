@@ -7,54 +7,34 @@ import * as rechargeRepository from "./../repositories/rechargeRepository.js"
 import * as businessRepository from "./../repositories/businessRepository.js"
 import * as paymentRepository from "./../repositories/paymentRepository.js"
 
+import { verifyApiKey } from "../utils/verifyApiKey.js";
+import { transactionsServices } from "../services/transactionsServices.js";
+import { cardServices } from "../services/cardServices.js";
+import { verifyCardRegistration } from "../utils/verifyCardRegistration.js";
+import { verifyCardExpiration } from "../utils/verifyCardExpiration.js";
+
 export async function recharges(req: Request, res: Response) {
     //Nessa rota, empresas com uma chave de API válida podem recarregar cartões de seus empregados.
     // Para um cartão ser recarregado precisamos do identificador do mesmo.
     const amount: number = +req.body.amount;
+    const cardId: number = +req.body.cardId;
+    const employeeId: number = +req.body.employeeId;
+
     const apiKey = req.headers['x-api-key'] as string;
-
-        if(!apiKey){
-            throw{
-                type: "NOT FOUND"
-            }
-        }
-
-    // TODO: Somente valores maiores que 0 deveram ser aceitos
+    verifyApiKey.verifyKey(apiKey)
 
     //Somente cartões cadastrados devem receber recargas
-    const cardId: number = +req.body.cardId;
-    const cardInfo = await cardRepository.findById(cardId);
-    if(cardInfo == undefined){
-        throw {
-            type: "CARD DOESN'T EXIST"
-        }
-    }
+    const cardInfo = await cardServices.findCardById(cardId)
 
     //Somente cartões ativos devem receber recargas
-    if(cardInfo.password == null){
-        throw {
-            type: "CARD IS NOT ACTIVATED"
-        }
-    }
+    verifyCardRegistration.verifyCardActivation(cardInfo)
 
     //Somente cartões não expirados devem receber recargas
-    const expiredData = cardInfo.expirationDate.split('/');
-    let formatExpiredData: string = '';
-    if(+expiredData[0] < 10){
-        formatExpiredData = dayjs(`01/0${+expiredData[0]+1}/${expiredData[1]}`).format();
-    } else if (+expiredData[0] >= 10 && +expiredData[0] < 12){
-        formatExpiredData = dayjs(`01/${+expiredData[0]+1}/${expiredData[1]}`).format();
-    } else {
-        formatExpiredData = dayjs(`01/01/${+expiredData[1]+1}`).format();
-    }
-    
-    const cardIsExpired = dayjs().isAfter(formatExpiredData)
-    if(cardIsExpired){
-        throw{
-            type: "CARD IS ALREADY EXPIRED"
-        }
-    }
+    verifyCardExpiration.verifyExpiration(cardInfo)
 
+    //Somente empregados da empresa podem ter o cartão recarregado
+    await transactionsServices.findIfEmployeeFromCompanyAndCardFromEmployee(apiKey, employeeId, cardId)
+    
     //A recarga deve ser persistida
     await rechargeRepository.insert({cardId, amount});
 
@@ -142,6 +122,3 @@ export async function payments(req: Request, res: Response){
     await paymentRepository.insert({ cardId, businessId, amount });
     res.sendStatus(200);
 }
-
-//TODO: MUDAR DATA DE EXPIRAÇÃO
-//TODO: ROTA RECARGAS --> VER SE O EMPREGADO PERTENCE A EMPRESA
