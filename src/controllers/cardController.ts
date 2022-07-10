@@ -129,32 +129,38 @@ export async function getCards(req: Request, res: Response) {
 //TODO: VOLTAR NESSA ROTA 
 export async function cardTransactions(req: Request, res: Response) {
     // Nessa rota, empregados podem visualizar o saldo de um cartão e as transações do mesmo. 
-    // Para isso, precisamos do identificador do cartão.(CVV?)
+    // Para isso, precisamos do identificador do cartão.
 
     // Somente cartões cadastrados devem poder ser visualizados
     const cardId: number = +req.params.cardId;
-    const cardInfo = await cardRepository.findById(cardId);
+/*     const cardInfo = await cardRepository.findById(cardId);
     if(cardInfo == undefined){
         throw {
             type: "CARD DOESN'T EXIST"
         }
-    }
+    } */
+
+    const cardInfo = await cardServices.findCardById(cardId)
+
     // O saldo de um cartão equivale a soma de suas recargas menos a soma de suas compras
-    const recharges = await rechargeRepository.findByCardId(cardId);
+/*     const recharges = await rechargeRepository.findByCardId(cardId);
     let rechargeAmount: number = 0;
         recharges?.map(recharge => {
             rechargeAmount += recharge.amount
-        })
+        }) */
+        const rechargeInfo = await cardServices.rechargeCardById(cardId)
 
-    const payments = await paymentRepository.findByCardId(cardId);
+/*     const payments = await paymentRepository.findByCardId(cardId);
     let paymentAmount: number = 0;
         payments?.map(payment => {
             paymentAmount += payment.amount
-        })
+        }) */
 
-    let balanceCard = rechargeAmount - paymentAmount;
+        const paymentInfo = await cardServices.paymentCardById(cardId);
 
-    res.send({"balance": balanceCard, "transactions": payments, "recharges": recharges}).status(200);
+    let balanceCard = rechargeInfo.rechargeAmount - paymentInfo.paymentAmount;
+
+    res.send({"balance": balanceCard, "transactions": paymentInfo.payments, "recharges": rechargeInfo.recharges}).status(200);
     
 }
 

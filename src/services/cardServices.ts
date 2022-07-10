@@ -1,6 +1,8 @@
 import * as companyRepository from "../repositories/companyRepository.js";
 import * as employeeRepository from "../repositories/employeeRepository.js";
-import * as cardRepository from "../repositories/cardRepository.js"
+import * as cardRepository from "../repositories/cardRepository.js";
+import * as rechargeRepository from "../repositories/rechargeRepository.js";
+import * as paymentRepository from "../repositories/paymentRepository.js";
 
 async function validateAPIKey(apiKey: string) {
     const isValidKey = await companyRepository.findByApiKey(apiKey)
@@ -43,9 +45,31 @@ async function findCardById(cardId: number) {
     return cardInfo
 }
 
+async function rechargeCardById(cardId: number) {
+    const recharges = await rechargeRepository.findByCardId(cardId);
+    let rechargeAmount: number = 0;
+        recharges?.map(recharge => {
+            rechargeAmount += recharge.amount
+        })
+    
+        return {recharges, rechargeAmount};
+}
+
+async function paymentCardById(cardId: number) {
+    const payments = await paymentRepository.findByCardId(cardId);
+    let paymentAmount: number = 0;
+        payments?.map(payment => {
+            paymentAmount += payment.amount
+        })
+
+        return {payments, paymentAmount}
+}
+
 export const cardServices = {
     validateAPIKey,
     registeredEmployee,
     confirmCardType,
-    findCardById
+    findCardById,
+    rechargeCardById,
+    paymentCardById
 }
