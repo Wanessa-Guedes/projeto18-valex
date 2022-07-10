@@ -9,7 +9,7 @@ export default async function handleError(error, req: Request, res: Response, ne
     if(error.type == "NOT REGISTERED" || error.type == "CARD ALREADY REGISTERED" 
         || error.type == "CARD IS ALREADY EXPIRED" || error.type == "CARD TYPE ALREADY REGISTERED"
         || error.type == "CVC INCORRECT" || error.type == "NO CARDS ACTIVE OR PASSWORD DONT MATCH" ||
-        error.type == "CARD IS ALREADY BLOCKED" || error.type == "INCORRECT PASSWORD" ||
+        error.type == "CARD IS BLOCKED" || error.type == "INCORRECT PASSWORD" ||
         error.type == "CARD IS NOT BLOCKED" || error.type == "CARD IS NOT ACTIVATED" || 
         error.type == "BUSINESS NOT REGISTERED" || error.type == "PAYMENT FAILLED: INCORRECT TYPE"
         || error.type == "INSUFFICIENT FUNDS" ){

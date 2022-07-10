@@ -1,5 +1,6 @@
 import * as employeeRepository from "./../repositories/employeeRepository.js";
 import * as cardRepository from "./../repositories/cardRepository.js";
+import * as businessRepository from "./../repositories/businessRepository.js";
 
 async function findIfEmployeeFromCompanyAndCardFromEmployee(apiKey: string, employeeId: number, cardId: number) {
     const employees = await employeeRepository.findEmployeeByCiaApiKey(apiKey);
@@ -22,6 +23,18 @@ async function findIfEmployeeFromCompanyAndCardFromEmployee(apiKey: string, empl
     }
 }
 
+async function findIfCompanyIsRegistered(businessId: number) {
+    const businessesRegistered = await businessRepository.findById(businessId);
+    if(!businessesRegistered){
+        throw{
+            type: "BUSINESS NOT REGISTERED"
+        }
+    }
+
+    return businessesRegistered
+}
+
 export const transactionsServices = {
-    findIfEmployeeFromCompanyAndCardFromEmployee
+    findIfEmployeeFromCompanyAndCardFromEmployee,
+    findIfCompanyIsRegistered
 }

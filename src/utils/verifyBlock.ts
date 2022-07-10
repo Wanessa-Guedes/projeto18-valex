@@ -3,7 +3,7 @@ import * as cardRepository from "../repositories/cardRepository.js"
 function verifyifIsBlock(cardInfo: cardRepository.Card){
     if(cardInfo.isBlocked){
         throw{
-            type: "CARD IS ALREADY BLOCKED"
+            type: "CARD IS BLOCKED"
         }
     }
 }

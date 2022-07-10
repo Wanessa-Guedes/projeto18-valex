@@ -121,6 +121,9 @@ export async function cardTransactions(req: Request, res: Response) {
     const cardId: number = +req.params.cardId;
     const cardInfo = await cardServices.findCardById(cardId)
 
+    // Somente cartões ativos tem transações
+    verifyCardRegistration.verifyCardActivation(cardInfo)
+
     // O saldo de um cartão equivale a soma de suas recargas menos a soma de suas compras
     const rechargeInfo = await cardServices.rechargeCardById(cardId)
 
@@ -140,6 +143,9 @@ export async function cardBlock(req: Request, res: Response) {
     const cardId: number = +req.params.cardId;
     const password: string = req.body.password;
     const cardInfo = await cardServices.findCardById(cardId)
+
+    // Somente cartões ativos podem ser bloqueados
+    verifyCardRegistration.verifyCardActivation(cardInfo)
 
     //A senha do cartão deverá ser recebida e verificada para garantir a segurança da requisição
     verifyPassword.verifyCorrectPassword(password, cardInfo)
@@ -164,7 +170,10 @@ export async function cardUnblock(req: Request, res: Response) {
     const password: string = req.body.password;
 
     const cardInfo = await cardServices.findCardById(cardId)
-
+    
+    // Somente cartões ativos podem ser desbloqueados
+    verifyCardRegistration.verifyCardActivation(cardInfo)
+    
     //A senha do cartão deverá ser recebida e verificada para garantir a segurança da requisição
     verifyPassword.verifyCorrectPassword(password, cardInfo)
 
