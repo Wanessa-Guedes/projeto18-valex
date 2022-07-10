@@ -16,7 +16,7 @@ import { verifyCardExpiration } from "../utils/verifyCardExpiration.js";
 import { verifyCardRegistration } from "../utils/verifyCardRegistration.js";
 import { verifyCVC } from "../utils/verifyCVC.js";
 import { verifyPassword } from "../utils/verifyPassword.js";
-import { verifyIfIsBlock } from "../utils/verifyIfIsBlock.js";
+import { verifyBlock } from "../utils/verifyBlock.js";
 
 export async function createCard(req: Request, res: Response) {
         //
@@ -155,44 +155,16 @@ export async function cardBlock(req: Request, res: Response) {
     // Somente cartões cadastrados devem ser bloqueados
     const cardId: number = +req.params.cardId;
     const password: string = req.body.password;
-
-/*     const cardInfo = await cardRepository.findById(cardId);
-    if(cardInfo == undefined){
-        throw {
-            type: "CARD DOESN'T EXIST"
-        }
-    } */
-
     const cardInfo = await cardServices.findCardById(cardId)
 
     //A senha do cartão deverá ser recebida e verificada para garantir a segurança da requisição
-/*     const isPasswordCorrect = bcrypt.compareSync(password, cardInfo.password);
-    if(!isPasswordCorrect){
-        throw{
-            type: "INCORRECT PASSWORD"
-        }
-    } */
-
     verifyPassword.verifyCorrectPassword(password, cardInfo)
     
     //Somente cartões não expirados devem ser bloqueados
-/*     const formatExpiredData = dayjs(`01/${cardInfo.expirationDate}`).format();
-    const cardIsExpired = dayjs().isAfter(formatExpiredData)
-    if(cardIsExpired){
-        throw{
-            type: "CARD IS ALREADY EXPIRED"
-        }
-    } */
-
     verifyCardExpiration.verifyExpiration(cardInfo)
 
     //Somente cartões não bloqueados devem ser bloqueados
-/*     if(cardInfo.isBlocked){
-        throw{
-            type: "CARD IS ALREADY BLOCKED"
-        }
-    } */
-    verifyIfIsBlock.verifyBlock(cardInfo)
+    verifyBlock.verifyifIsBlock(cardInfo)
 
     await cardRepository.update(cardId, {isBlocked: true});
 
@@ -207,35 +179,16 @@ export async function cardUnblock(req: Request, res: Response) {
     const cardId: number = +req.params.cardId;
     const password: string = req.body.password;
 
-    const cardInfo = await cardRepository.findById(cardId);
-    if(cardInfo == undefined){
-        throw {
-            type: "CARD DOESN'T EXIST"
-        }
-    }
+    const cardInfo = await cardServices.findCardById(cardId)
 
     //A senha do cartão deverá ser recebida e verificada para garantir a segurança da requisição
-    const isPasswordCorrect = bcrypt.compareSync(password, cardInfo.password);
-    if(!isPasswordCorrect){
-        throw{
-            type: "INCORRECT PASSWORD"
-        }
-    }
+    verifyPassword.verifyCorrectPassword(password, cardInfo)
+
     //Somente cartões não expirados devem ser desbloqueados
-    const formatExpiredData = dayjs(`01/${cardInfo.expirationDate}`).format();
-    const cardIsExpired = dayjs().isAfter(formatExpiredData)
-    if(cardIsExpired){
-        throw{
-            type: "CARD IS ALREADY EXPIRED"
-        }
-    }
+    verifyCardExpiration.verifyExpiration(cardInfo)
 
     //Somente cartões bloqueados devem ser desbloqueados
-    if(!cardInfo.isBlocked){
-        throw{
-            type: "CARD IS NOT BLOCKED"
-        }
-    }
+    verifyBlock.verifyIfIsUnblock(cardInfo)
 
     await cardRepository.update(cardId, {isBlocked: false});
 
