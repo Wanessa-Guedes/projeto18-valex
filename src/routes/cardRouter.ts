@@ -12,7 +12,7 @@ cardRouter.post("/card", schemaValidator(typeCardSchema), createCard)
 cardRouter.post("/activatecard", schemaValidator(activationCardSchema), activateCard)
 cardRouter.get("/card", getCards)
 cardRouter.get("/cardbalance/:cardId", cardTransactions)
-cardRouter.put("/card/block", cardBlock)
-cardRouter.put("/card/unblock", cardUnblock)
+cardRouter.put("/card/block/:cardId", cardBlock)
+cardRouter.put("/card/unblock/:cardId", cardUnblock)
 
 export default cardRouter;

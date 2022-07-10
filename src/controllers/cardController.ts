@@ -15,6 +15,8 @@ import { generateInfosCard } from "../utils/generateInfosCard.js";
 import { verifyCardExpiration } from "../utils/verifyCardExpiration.js";
 import { verifyCardRegistration } from "../utils/verifyCardRegistration.js";
 import { verifyCVC } from "../utils/verifyCVC.js";
+import { verifyPassword } from "../utils/verifyPassword.js";
+import { verifyIfIsBlock } from "../utils/verifyIfIsBlock.js";
 
 export async function createCard(req: Request, res: Response) {
         //
@@ -126,37 +128,19 @@ export async function getCards(req: Request, res: Response) {
     res.sendStatus(200)
 }
 
-//TODO: VOLTAR NESSA ROTA 
+
 export async function cardTransactions(req: Request, res: Response) {
     // Nessa rota, empregados podem visualizar o saldo de um cartão e as transações do mesmo. 
     // Para isso, precisamos do identificador do cartão.
 
     // Somente cartões cadastrados devem poder ser visualizados
     const cardId: number = +req.params.cardId;
-/*     const cardInfo = await cardRepository.findById(cardId);
-    if(cardInfo == undefined){
-        throw {
-            type: "CARD DOESN'T EXIST"
-        }
-    } */
-
     const cardInfo = await cardServices.findCardById(cardId)
 
     // O saldo de um cartão equivale a soma de suas recargas menos a soma de suas compras
-/*     const recharges = await rechargeRepository.findByCardId(cardId);
-    let rechargeAmount: number = 0;
-        recharges?.map(recharge => {
-            rechargeAmount += recharge.amount
-        }) */
-        const rechargeInfo = await cardServices.rechargeCardById(cardId)
+    const rechargeInfo = await cardServices.rechargeCardById(cardId)
 
-/*     const payments = await paymentRepository.findByCardId(cardId);
-    let paymentAmount: number = 0;
-        payments?.map(payment => {
-            paymentAmount += payment.amount
-        }) */
-
-        const paymentInfo = await cardServices.paymentCardById(cardId);
+    const paymentInfo = await cardServices.paymentCardById(cardId);
 
     let balanceCard = rechargeInfo.rechargeAmount - paymentInfo.paymentAmount;
 
@@ -169,39 +153,46 @@ export async function cardBlock(req: Request, res: Response) {
     //Para um cartão ser bloqueado precisamos do identificador(CVC ou id?) e da senha do mesmo.
 
     // Somente cartões cadastrados devem ser bloqueados
-    const cardId: number = +req.body.cardId;
+    const cardId: number = +req.params.cardId;
     const password: string = req.body.password;
 
-    const cardInfo = await cardRepository.findById(cardId);
+/*     const cardInfo = await cardRepository.findById(cardId);
     if(cardInfo == undefined){
         throw {
             type: "CARD DOESN'T EXIST"
         }
-    }
+    } */
+
+    const cardInfo = await cardServices.findCardById(cardId)
 
     //A senha do cartão deverá ser recebida e verificada para garantir a segurança da requisição
-    const isPasswordCorrect = bcrypt.compareSync(password, cardInfo.password);
+/*     const isPasswordCorrect = bcrypt.compareSync(password, cardInfo.password);
     if(!isPasswordCorrect){
         throw{
             type: "INCORRECT PASSWORD"
         }
-    }
+    } */
+
+    verifyPassword.verifyCorrectPassword(password, cardInfo)
     
     //Somente cartões não expirados devem ser bloqueados
-    const formatExpiredData = dayjs(`01/${cardInfo.expirationDate}`).format();
+/*     const formatExpiredData = dayjs(`01/${cardInfo.expirationDate}`).format();
     const cardIsExpired = dayjs().isAfter(formatExpiredData)
     if(cardIsExpired){
         throw{
             type: "CARD IS ALREADY EXPIRED"
         }
-    }
+    } */
+
+    verifyCardExpiration.verifyExpiration(cardInfo)
 
     //Somente cartões não bloqueados devem ser bloqueados
-    if(cardInfo.isBlocked){
+/*     if(cardInfo.isBlocked){
         throw{
             type: "CARD IS ALREADY BLOCKED"
         }
-    }
+    } */
+    verifyIfIsBlock.verifyBlock(cardInfo)
 
     await cardRepository.update(cardId, {isBlocked: true});
 
@@ -213,7 +204,7 @@ export async function cardUnblock(req: Request, res: Response) {
     //Para um cartão ser desbloqueado precisamos do identificador e da senha do mesmo.
 
     //Somente cartões cadastrados devem ser desbloqueados
-    const cardId: number = +req.body.cardId;
+    const cardId: number = +req.params.cardId;
     const password: string = req.body.password;
 
     const cardInfo = await cardRepository.findById(cardId);
