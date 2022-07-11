@@ -1,8 +1,9 @@
 import {faker} from "@faker-js/faker";
 import dayjs from "dayjs";
 import Cryptr from "cryptr";
+import { Employee } from "../repositories/employeeRepository.js";
 
-function generateCard(validEmployee){
+function generateCard(validEmployee: Employee){
             //Utilize a biblioteca faker para gerar o número do cartão
             const creditCarNumber = faker.finance.creditCardNumber('visa');
         

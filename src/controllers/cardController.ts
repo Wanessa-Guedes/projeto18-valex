@@ -45,7 +45,9 @@ export async function createCard(req: Request, res: Response) {
 
         await cardRepository.insert(cardData)
 
-        res.status(201).send([cardData.number, infosCard.cardCVV]);
+        res.status(201).send([{"Card Number": cardData.number, "CVC": infosCard.cardCVV, 
+                                "Name": cardData.cardholderName, "Validate": cardData.expirationDate,
+                                "Type": cardData.type}]);
 }
 
 export async function activateCard(req: Request, res: Response) {

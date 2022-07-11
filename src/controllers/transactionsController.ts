@@ -1,11 +1,7 @@
 import { Request, Response } from "express";
-import dayjs from "dayjs";
-import bcrypt from "bcrypt" ;
 
-import * as cardRepository from "./../repositories/cardRepository.js"
-import * as rechargeRepository from "./../repositories/rechargeRepository.js"
-import * as businessRepository from "./../repositories/businessRepository.js"
-import * as paymentRepository from "./../repositories/paymentRepository.js"
+import * as rechargeRepository from "./../repositories/rechargeRepository.js";
+import * as paymentRepository from "./../repositories/paymentRepository.js";
 
 import { verifyApiKey } from "../utils/verifyApiKey.js";
 import { transactionsServices } from "../services/transactionsServices.js";
