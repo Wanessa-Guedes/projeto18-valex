@@ -75,44 +75,6 @@ export async function activateCard(req: Request, res: Response) {
 
 }
 
-//TODO: ROTA DANDO ERRO - VOLTAR AQUI (Visualização de cartões)
-export async function getCards(req: Request, res: Response) {
-    // Nessa rota, empregados podem visualizar os dados de seus cartões. 
-    //Para um cartão ser visualizado precisamos do identificador do empregado e da senha dos cartões.
-    const employeeId: number = req.body.employeeId;
-    const passwords: string[] = req.body.passwords;
-
-    //Somente cartões cadastrados devem poder ser visualizados
-    const isCardRegistered = await cardRepository.findByEmployeeId(employeeId);
-    if(isCardRegistered.length == 0){
-        throw{
-            type: "NOT REGISTERED"
-        }
-    }
-
-    //Somente cartões ativos podem ser visualizados
-    let cardsActived = [];
-    isCardRegistered?.filter((cardRegistered) => {
-        if(!cardRegistered.isBlocked && cardRegistered.password !== null){
-                let isPassword = passwords.map(password => {
-                    bcrypt.compareSync(password, cardRegistered.password)
-            })
-            if(isPassword){
-                cardsActived.push(cardRegistered)
-            }
-        }
-    })
-
-    if(cardsActived.length == 0){
-        throw{
-            type: "NO CARDS ACTIVE OR PASSWORD DONT MATCH"
-        }
-    }
-
-    res.sendStatus(200)
-}
-
-
 export async function cardTransactions(req: Request, res: Response) {
     // Nessa rota, empregados podem visualizar o saldo de um cartão e as transações do mesmo. 
     // Para isso, precisamos do identificador do cartão.
