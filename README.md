@@ -30,19 +30,15 @@ API:
 - POST /card (autenticada)
     - Rota para criar um novo cartão (Route to create a new card)
     - headers: {"x-api-key": "<CADASTRADO NO BANCO (REGISTERED IN THE BANK)>"}
-    - body: {
-        "employeeId": <número (number)>,
-        "cardType": "groceries" | "restaurant" | "transport" | "education" | "health",
-    }
+    - body: {"employeeId": <número (number)>,
+             "cardType": "groceries" | "restaurant" | "transport" | "education" | "health"}
     
 - POST /activatecard
     - Rota para ativar cartão (Route to activate card)
     - headers: {}
-    - body: {
-    "cardId": <número (number)>,
-    "securityCode": "<123>" (string.length(3)),
-    "password": "<0123>" (string.length(4))
-    }
+    - body: {"cardId": <número (number)>,
+             "securityCode": "<123>" (string.length(3)),
+             "password": "<0123>" (string.length(4))}
     
 - GET /cardbalance/:cardId
     - Rota para listar o saldo e as transações realizadas com o cartão (Route to list balance and transactions performed with the card)
