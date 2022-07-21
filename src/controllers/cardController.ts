@@ -14,7 +14,7 @@ import { verifyBlock } from "../utils/verifyBlock.js";
 
 export async function createCard(req: Request, res: Response) {
         const {employeeId, cardType}:{employeeId: number, cardType: cardRepository.TransactionTypes} = req.body;
-        
+        //TODO: ADD UM MIDDLEWARE DE VALIDAR ESSE HEADER
         const apiKey = req.headers['x-api-key'] as string;
         verifyApiKey.verifyKey(apiKey)
 
